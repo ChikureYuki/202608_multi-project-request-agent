@@ -34,7 +34,7 @@
 
 - **言語:** TypeScript（Node.js 20+）
 - **起動:** CLI
-- **実行時 LLM:** Google Gemini API（デフォルト `gemini-2.5-flash`、無料枠利用可）
+- **実行時 LLM:** Google Gemini API（デフォルト `gemini-3.6-flash`、無料枠利用可）
 - **入力:** CSV（`projects.csv`, `requests.csv`, `product_features.csv`, `product_meta.csv`）
 - **出力:** HTML レポート（[`docs/report-template.html`](docs/report-template.html) 準拠）
 - **ツール:** Function Calling 5 種（詳細は [`docs/design-tools-and-scoring.md`](docs/design-tools-and-scoring.md)）
@@ -160,7 +160,7 @@ LLM 出力は JSON スキーマ（または zod）で検証し、不正時はリ
 
 ```env
 GOOGLE_API_KEY=...
-LLM_MODEL=gemini-2.5-flash
+LLM_MODEL=gemini-3.6-flash
 LOG_LEVEL=info
 ```
 

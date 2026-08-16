@@ -455,10 +455,12 @@
 
       <h3 class="sub">事前準備（評価者向け）</h3>
       <ol class="compact">
-        <li><code>.env.example</code> を <code>.env</code> にコピー</li>
+        <li><code>.env.example</code> を <code>.env</code> にコピー<br>
+          <span style="font-size:13px;color:var(--muted);">Windows（cmd）: <code>copy .env.example .env</code>　/　PowerShell: <code>Copy-Item .env.example .env</code>　/　Mac・Linux: <code>cp .env.example .env</code></span></li>
         <li><code>GOOGLE_API_KEY</code> を設定（<a href="https://aistudio.google.com/apikey">Google AI Studio</a> で取得）</li>
         <li><code>npm ci --ignore-scripts &amp;&amp; npm run build</code></li>
-        <li>入力 CSV を <code>data/production/</code> に配置（デモは <code>data/sample/</code> をコピー）</li>
+        <li>入力 CSV を <code>data/production/</code> に配置（デモは <code>data/sample/</code> をコピー）<br>
+          <span style="font-size:13px;color:var(--muted);">Windows（cmd）: <code>copy data\sample\*.csv data\production\</code>　/　PowerShell: <code>Copy-Item data\sample\*.csv data\production\</code>　/　Mac・Linux: <code>cp data/sample/*.csv data/production/</code></span></li>
       </ol>
 
       <h3 class="sub">実行手順（LLM モード）</h3>

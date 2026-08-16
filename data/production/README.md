@@ -9,12 +9,10 @@
 
 デモは `data/sample/` をコピーして動作確認できます。
 
-```bash
-# Mac / Linux
-cp data/sample/*.csv data/production/
-
-# Windows (PowerShell)
-Copy-Item data\sample\*.csv data\production\
-```
+| OS | コピー命令 |
+|---|---|
+| **Windows（コマンドプロンプト）** | `copy data\sample\*.csv data\production\` |
+| **Windows（PowerShell）** | `Copy-Item data\sample\*.csv data\production\` |
+| **Mac / Linux** | `cp data/sample/*.csv data/production/` |
 
 列仕様は [`AGENT.md`](../../AGENT.md) を参照してください。

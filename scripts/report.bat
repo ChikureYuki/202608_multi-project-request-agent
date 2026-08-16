@@ -37,27 +37,38 @@ echo   Out:  %OUT%
 if defined EXTRA echo   Mode: dry-run
 echo.
 
+if exist "%OUT%" del /q "%OUT%"
+
+set "NODE_RC=0"
 if exist ".env" (
-  node --env-file=.env dist\cli.js --data "%DATA_DIR%" --out "%OUT%" --config "%CONFIG%" %EXTRA%
+  call node --env-file=.env dist\cli.js --data "%DATA_DIR%" --out "%OUT%" --config "%CONFIG%" %EXTRA%
 ) else (
   if not defined EXTRA (
     echo [WARN] .env not found. Set GOOGLE_API_KEY for LLM mode.
     echo        Free trial: scripts\report.bat --dry-run
     echo.
   )
-  node dist\cli.js --data "%DATA_DIR%" --out "%OUT%" --config "%CONFIG%" %EXTRA%
+  call node dist\cli.js --data "%DATA_DIR%" --out "%OUT%" --config "%CONFIG%" %EXTRA%
 )
+set "NODE_RC=%ERRORLEVEL%"
 
-if errorlevel 1 (
+if not "%NODE_RC%"=="0" (
   echo.
   echo [ERROR] Report generation failed.
+  pause
+  exit /b %NODE_RC%
+)
+
+if not exist "%OUT%" (
+  echo.
+  echo [ERROR] Output not found: %OUT%
   pause
   exit /b 1
 )
 
 echo.
 echo Done: %OUT%
-if exist "%OUT%" start "" "%OUT%"
+start "" "%OUT%"
 echo.
 pause
 exit /b 0

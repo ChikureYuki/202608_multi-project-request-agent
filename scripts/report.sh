@@ -39,6 +39,8 @@ if ((${#EXTRA[@]})); then
 fi
 echo
 
+rm -f "$OUT"
+
 NODE_ARGS=(dist/cli.js --data "$DATA_DIR" --out "$OUT" --config "$CONFIG" "${EXTRA[@]}")
 if [[ -f ".env" ]]; then
   node --env-file=.env "${NODE_ARGS[@]}"

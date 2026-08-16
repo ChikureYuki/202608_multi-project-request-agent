@@ -36,7 +36,7 @@ Options:
 
 Environment (LLM モード):
   GOOGLE_API_KEY   Google Gemini API キー（Google AI Studio で取得）
-  LLM_MODEL        モデル名 (default: gemini-2.5-flash)
+  LLM_MODEL        モデル名 (default: gemini-3.6-flash)
 
 Cost notes:
   --dry-run        無料（API 呼び出しなし）
@@ -52,9 +52,21 @@ function getApiKey(): string | undefined {
   );
 }
 
+function resolveModel(): string {
+  const raw = process.env.LLM_MODEL ?? "gemini-3.6-flash";
+  const deprecated = ["gemini-2.5-flash", "models/gemini-2.5-flash"];
+  if (deprecated.includes(raw) || raw.includes("gemini-2.5-flash")) {
+    console.warn(
+      "警告: gemini-2.5-flash は新規利用不可のため gemini-3.6-flash に切り替えます。.env の LLM_MODEL を更新してください。",
+    );
+    return "gemini-3.6-flash";
+  }
+  return raw;
+}
+
 async function main(): Promise<void> {
   const opts = parseArgs(process.argv.slice(2));
-  const model = process.env.LLM_MODEL ?? "gemini-3.6-flash";
+  const model = resolveModel();
   const apiKey = getApiKey();
 
   console.log(`データ: ${opts.data}`);
@@ -85,8 +97,13 @@ async function main(): Promise<void> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`Error: ${message}`);
+    process.exitCode = 1;
     process.exit(1);
   }
 }
 
-main();
+main().catch((err) => {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(`Error: ${message}`);
+  process.exit(1);
+});

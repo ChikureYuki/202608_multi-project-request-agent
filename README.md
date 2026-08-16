@@ -25,7 +25,7 @@
 
 ## 3. 主な使い方
 
-1. リポジトリを clone し、依存関係をインストールしてビルドする（§7）
+1. リポジトリを clone し、セットアップ手順を元にビルドする（§7）
 2. `.env` に `GOOGLE_API_KEY` を設定する（LLM モード。開発確認は `--dry-run` でキー不要）
 3. 入力 CSV を `data/production/` に置く（デモは `data/sample/` をコピー）
 4. 以下いずれかで実行し、`output/report.html` をブラウザで確認する
@@ -133,13 +133,17 @@ git clone https://github.com/ChikureYuki/202608_multi-project-request-agent.git
 cd 202608_multi-project-request-agent
 npm ci --ignore-scripts
 npm run build
-cp .env.example .env
-# .env に GOOGLE_API_KEY を設定（LLM デモ時）
-
-# report.bat / report.sh は data/production/ を参照する
-cp data/sample/*.csv data/production/
-# Windows (PowerShell): Copy-Item data\sample\*.csv data\production\
 ```
+
+**環境ファイルと入力 CSV の用意**
+
+| OS | `.env` の作成 | デモ用 CSV を `data/production/` へ |
+|---|---|---|
+| **Windows（コマンドプロンプト）** | `copy .env.example .env` | `copy data\sample\*.csv data\production\` |
+| **Windows（PowerShell）** | `Copy-Item .env.example .env` | `Copy-Item data\sample\*.csv data\production\` |
+| **Mac / Linux** | `cp .env.example .env` | `cp data/sample/*.csv data/production/` |
+
+`.env` に `GOOGLE_API_KEY` を設定する（LLM デモ時）。`report.bat` / `report.sh` は `data/production/` を参照します。
 
 **デモ実行（LLM）**
 
@@ -178,28 +182,50 @@ node --env-file=.env dist/cli.js --data ./data/sample --out ./output/report.html
 
 ## 9. 工夫した点
 
-**業務面**
+**業務・設計面**
 
-- 優先度を利益・ランク・契約・要望件数・複数案件ボーナスでルール化し、数値で比較可能にした
+- 優先度を利益・ランク・契約・要望件数・複数案件ボーナスでルール化し、数値で比較可能にした（閾値 150/80/30、100 万円 = 1 点は人が決定）
 - 提案（LLM）と採否（人）を分離し、会議で議論しやすい HTML レポートにした
-- CSV 列設計を DB 移行しやすい粒度にし、将来スプレッドシート / DB 連携を見据えた
+- LLM とルールの分担を固定 — **スコア計算は必ず TypeScript 側**（再現性・テスト可能性）
+- CSV 列設計を DB 移行しやすい粒度にし、Tools 読込層だけ差し替えてデータソースを拡張できる構成にした
 
-**技術面**
+**開発・技術面**
 
-- Gemini API 直接呼び出し + Function Calling（読込フェーズの tool call ループ）
-- スコア計算は LLM に任せず TypeScript で固定（テスト可能）
-- `--dry-run` で API なし開発・CI 確認、本番デモは LLM モード
-- `scripts/report.bat` / `report.sh` で PdM がダブルクリック実行可能（ローカルサーバー不要）
-- Cursor 中心で実装、設計相談に ChatGPT を利用（実行時 LLM とは別）
+- [`docs/要件定義.html`](docs/要件定義.html) と [`AGENT.md`](AGENT.md) を正として、**Cursor** 中心に型 → スコア → Tools → Runner の順で段階実装
+- 設計相談に **ChatGPT**（優先度ルールのたたき台、ツール 5 種の分担、デモシナリオ調整）— **実行時 LLM（Gemini）とは別物**
+- Gemini API + Function Calling（読込フェーズの tool call ループ）、429 やモデル世代差は Cursor で反復修正
+- `--dry-run` で API なしの開発・確認サイクル、本番デモは LLM モードで最終確認
+- `scripts/report.bat` / `report.sh` で PdM がダブルクリック実行可能（ローカル Web UI 不要）
 
 ---
 
 ## 10. 制約・今後の改善
 
-- **うまくいくケース:** 要望が CSV で構造化され案件 ID で紐付いている／プロダクト機能一覧が比較的最新／週次 20〜30 件程度のバッチ処理
-- **苦手なケース:** 口頭のみの要望／プロダクト情報が古く新規・改善判断が弱い／政治的判断が案件属性より大きい場合
-- **未実装のこと:** 実行ログ・コスト可視化、レポート差分（前週比）、分類結果の人間修正 UI、バックログ自動連携
-- **実務投入するなら次に改善すること:** CRM / 議事録からの CSV 自動 Export、DB / スプレッドシートをデータソースに差し替え、JSON スキーマ検証の強化、週次 cron と失敗通知
+**詰まった点**
+
+- AI エージェントの定義理解
+- 実行方法の策定
+
+**妥協した点**
+
+- 優先度スコアの詳細設定
+- データ設計
+- 詳細設計書の作成
+- テスト項目書の作成
+
+**改善したい点**
+
+- サービス・顧客に合わせた優先度の定量化設計
+- セキュリティ面の設計、環境構築の見直し
+
+**実務投入するなら追加すること**
+
+- **採択→実装→CI/CD の自動化** — 要承認機能
+- **AI エージェント業務環境での実行環境**
+- **役職・役割ごとの関連作業の自動化・ツール組み込み**
+  - 起票者 — 要望の追加、ヒアリング不足事項の確認
+  - 責任者 — 課題の吸い上げ、優先度調整
+  - 実装者 — 採択状況の確認、設計の検討、資料更新
 
 **注意:** サンプル要望は架空です。API 利用料金は利用者負担です。本番 CSV に機密情報を含めないでください。
 

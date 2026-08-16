@@ -9,7 +9,7 @@
 - **プロダクト:** 複数案件の要望から次の開発を提案する AI エージェント
 - **入力:** `data/sample/*.csv`
 - **出力:** HTML レポート
-- **LLM:** Google Gemini `gemini-2.5-flash`（`.env` の `GOOGLE_API_KEY`）
+- **LLM:** Google Gemini `gemini-3.6-flash`（`.env` の `GOOGLE_API_KEY`）
 - **要件:** [`docs/要件定義.html`](docs/要件定義.html)
 
 詳細は AGENT.md を参照してください。
