@@ -455,12 +455,37 @@
 
       <h3 class="sub">事前準備（評価者向け）</h3>
       <ol class="compact">
-        <li><code>.env.example</code> を <code>.env</code> にコピー<br>
-          <span style="font-size:13px;color:var(--muted);">Windows（cmd）: <code>copy .env.example .env</code>　/　PowerShell: <code>Copy-Item .env.example .env</code>　/　Mac・Linux: <code>cp .env.example .env</code></span></li>
-        <li><code>GOOGLE_API_KEY</code> を設定（<a href="https://aistudio.google.com/apikey">Google AI Studio</a> で取得）</li>
-        <li><code>npm ci --ignore-scripts &amp;&amp; npm run build</code></li>
-        <li>入力 CSV を <code>data/production/</code> に配置（デモは <code>data/sample/</code> をコピー）<br>
-          <span style="font-size:13px;color:var(--muted);">Windows（cmd）: <code>copy data\sample\*.csv data\production\</code>　/　PowerShell: <code>Copy-Item data\sample\*.csv data\production\</code>　/　Mac・Linux: <code>cp data/sample/*.csv data/production/</code></span></li>
+        <li>リポジトリを clone し、ビルドする
+          <div class="arch-formula">git clone https://github.com/ChikureYuki/202608_multi-project-request-agent.git<br>
+cd 202608_multi-project-request-agent<br>
+npm ci --ignore-scripts<br>
+npm run build</div>
+        </li>
+        <li>環境ファイルと入力 CSV を用意する
+          <div class="table-wrap" style="margin-top:8px;">
+            <table>
+              <thead><tr><th>OS</th><th><code>.env</code> の作成</th><th>デモ用 CSV を <code>data/production/</code> へ</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Windows（コマンドプロンプト）</strong></td>
+                  <td><code>copy .env.example .env</code></td>
+                  <td><code>copy data\sample\*.csv data\production\</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Windows（PowerShell）</strong></td>
+                  <td><code>Copy-Item .env.example .env</code></td>
+                  <td><code>Copy-Item data\sample\*.csv data\production\</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Mac / Linux</strong></td>
+                  <td><code>cp .env.example .env</code></td>
+                  <td><code>cp data/sample/*.csv data/production/</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </li>
+        <li><code>.env</code> に <code>GOOGLE_API_KEY</code> を設定する（LLM デモ時。<a href="https://aistudio.google.com/apikey">Google AI Studio</a> で取得）。<code>report.bat</code> / <code>report.sh</code> は <code>data/production/</code> を参照します。</li>
       </ol>
 
       <h3 class="sub">実行手順（LLM モード）</h3>
