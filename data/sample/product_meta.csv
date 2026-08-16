@@ -1,0 +1,5 @@
+meta_key,meta_value
+product_policy,企業のAIエージェントと業務ツールを安全につなぐ。ガバナンスと実装力の両立を重視する
+quarterly_focus,営業AXユースケースの横展開、監査ログの実務利用性向上、導入初期のセットアップ時間短縮
+development_constraint,TypeScript製。オンプレ不可の顧客向けにはクラウドのみ。Slack連携はベータのため大規模改修は慎重に
+development_constraint,MCPプロトコル仕様変更への追従コストが高い。破壊的変更は四半期1回まで

@@ -1,0 +1,20 @@
+{
+  "name": "dev-proposal-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "複数案件の要望から次の開発を提案する AI エージェント",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "report": "node --env-file=.env dist/cli.js",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test dist/scoring/calculate.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}

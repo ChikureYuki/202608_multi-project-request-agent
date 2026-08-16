@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>デモ資料 — 複数案件の要望から次の開発を提案する AI エージェント</title>
+<style>
+  :root {
+    --emerald:#66c2b9; --emerald-dark:#3a9d94;
+    --card-grad:linear-gradient(145deg,#f9fcfb 0%,#eef5f3 100%);
+    --line:#d0e0dc; --line-soft:#ddeae7;
+    --fg:#333; --muted:#666;
+    --shadow:0 10px 30px rgba(0,0,0,.05);
+    --pill-grad:linear-gradient(90deg,#8ed9d2 0%,#66c2b9 55%,#52b5ac 100%);
+    --th-base:#ecf4f2; --th-fg:#555;
+    --accent:#3d7fa8; --warn:#a67c28; --ok:#2d8a82; --soon:#a67c28;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; color:var(--fg); font-size:15px;
+    font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic UI",sans-serif;
+    line-height:1.55; background:#f2f6f5;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:28px 20px 48px; }
+  .wrap.head-wrap { padding-bottom:16px; }
+  .wrap.body-wrap { padding-top:18px; }
+  .page-head { margin-bottom:0; }
+  .page-head h1 { font-size:26px; font-weight:700; margin:0 0 8px; color:var(--emerald-dark); }
+  .sub { color:var(--muted); font-size:13px; }
+  .badge {
+    display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px;
+    background:rgba(166,124,40,.12); color:var(--soon); margin-right:6px; font-weight:600;
+  }
+  .meta-chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
+  .chip {
+    font-size:12px; padding:4px 12px; border-radius:50px;
+    background:rgba(102,194,185,.15); border:1px solid var(--line);
+  }
+  .chip.live { background:rgba(212,93,93,.1); border-color:#e8b0b0; color:#a94444; font-weight:600; }
+  .panel {
+    background:var(--card-grad); border:1px solid var(--line); border-radius:20px;
+    margin-bottom:18px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .panel-head {
+    padding:14px 20px 12px; border-bottom:1px dashed var(--line);
+    background:var(--pill-grad);
+  }
+  .panel-head h2 { font-size:17px; font-weight:600; margin:0; color:#fff; }
+  .panel-body { padding:16px 20px 18px; }
+  h3.sub { font-size:15px; margin:16px 0 8px; color:var(--emerald-dark); }
+  h3.sub:first-child { margin-top:0; }
+  .acc-wrap { margin:16px 0; }
+  .acc {
+    border:1px solid var(--line); border-radius:12px;
+    background:rgba(255,255,255,.35); overflow:hidden;
+  }
+  .acc > summary {
+    cursor:pointer; padding:12px 16px;
+    list-style:none; display:flex; align-items:flex-start; gap:10px;
+    user-select:none;
+  }
+  .acc > summary::-webkit-details-marker { display:none; }
+  .acc-ctrl {
+    display:flex; align-items:center; gap:4px;
+    flex-shrink:0; font-size:12px; color:var(--muted); font-weight:500;
+    padding-top:2px;
+  }
+  .acc-arrow {
+    font-size:14px; color:var(--muted);
+    transition:transform .15s ease; line-height:1;
+  }
+  .acc[open] .acc-arrow { transform:rotate(90deg); }
+  .acc-toggle-open { display:inline; }
+  .acc-toggle-close { display:none; }
+  .acc[open] .acc-toggle-open { display:none; }
+  .acc[open] .acc-toggle-close { display:inline; }
+  .acc-head-text {
+    flex:1; min-width:0;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .acc-title {
+    font-size:15px; font-weight:600; color:var(--emerald-dark); line-height:1.35;
+  }
+  .acc-lead {
+    font-size:14px; color:var(--muted); font-weight:400; line-height:1.5;
+  }
+  .acc > summary:hover { background:rgba(102,194,185,.08); }
+  .acc-body { padding:0 16px 16px; }
+  .acc-body > :first-child { margin-top:0; }
+  ul.compact, ol.compact { margin:6px 0 0; padding-left:1.25em; font-size:14px; }
+  ul.compact li, ol.compact li { margin-bottom:6px; }
+  .table-wrap {
+    border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    margin:12px 0; background:rgba(255,255,255,.35);
+  }
+  table { width:100%; border-collapse:collapse; }
+  th, td {
+    border-bottom:1px dashed var(--line-soft); padding:10px 12px;
+    vertical-align:top; font-size:14px; text-align:left;
+  }
+  thead th { background:var(--th-base); color:var(--th-fg); font-weight:600; }
+  tbody tr:nth-child(even) td { background:rgba(102,194,185,.07); }
+  .callout {
+    padding:12px 14px; border-radius:12px; margin:12px 0; font-size:14px;
+  }
+  .callout.ok { background:rgba(45,138,130,.08); border:1px dashed #9dcdc8; }
+  .callout.warn { background:rgba(166,124,40,.08); border:1px dashed #e2c896; }
+  .callout.live { background:rgba(212,93,93,.06); border:2px solid #e8b0b0; }
+  .callout.live strong { color:#a94444; }
+  .tag {
+    display:inline-block; font-size:10px; font-weight:700;
+    padding:2px 7px; border-radius:999px; margin-left:4px; vertical-align:middle;
+  }
+  .tag.rule { background:rgba(61,127,168,.12); color:#3d6f96; }
+  .tag.llm { background:rgba(102,194,185,.2); color:var(--emerald-dark); }
+  .tag.human { background:rgba(166,124,40,.14); color:var(--soon); }
+  .flow { counter-reset:flow; list-style:none; margin:0; padding:0; }
+  .flow li {
+    position:relative; padding:0 0 14px 34px; margin:0;
+    border-left:2px solid var(--line-soft); margin-left:11px;
+  }
+  .flow li:last-child { border-left-color:transparent; padding-bottom:0; }
+  .flow li::before {
+    counter-increment:flow; content:counter(flow);
+    position:absolute; left:-12px; top:0;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--pill-grad); color:#fff;
+    font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .flow strong { display:block; font-size:14px; }
+  .flow span { display:block; font-size:13px; color:var(--muted); margin-top:2px; }
+  code {
+    background:rgba(102,194,185,.12); padding:2px 6px; border-radius:6px;
+    font-size:12.5px; font-family:Consolas,"Cascadia Mono",monospace;
+  }
+  .demo-steps {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:12px 0;
+  }
+  .demo-step {
+    border:1px solid var(--line); border-radius:14px; padding:14px;
+    background:rgba(255,255,255,.5); text-align:center;
+  }
+  .demo-step .num {
+    display:inline-flex; width:28px; height:28px; border-radius:50%;
+    background:var(--pill-grad); color:#fff; font-weight:700; font-size:13px;
+    align-items:center; justify-content:center; margin-bottom:8px;
+  }
+  .demo-step h4 { margin:0 0 6px; font-size:14px; color:var(--emerald-dark); }
+  .demo-step p { margin:0; font-size:13px; color:var(--muted); }
+  .agenda-bar {
+    position:sticky; top:0; z-index:50; width:100%;
+    background:#eef5f3; border-top:1px solid var(--line);
+    box-shadow:0 4px 14px rgba(0,0,0,.06);
+  }
+  .agenda-inner {
+    max-width:1080px; margin:0 auto;
+    display:flex; align-items:center; gap:12px; padding:10px 20px;
+  }
+  .agenda-gap {
+    height:14px;
+    background:#eef5f3;
+  }
+  .agenda-rule {
+    display:block;
+    width:100%;
+    height:0;
+    margin:0;
+    border:0;
+    border-top:1px solid var(--line);
+  }
+  .agenda-label {
+    flex-shrink:0; font-size:11px; font-weight:700; color:#fff;
+    letter-spacing:.06em;
+    margin:0; padding:5px 10px; border-radius:999px; background:var(--pill-grad);
+    white-space:nowrap;
+  }
+  .toc {
+    margin:0; padding:0; list-style:none;
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:6px 8px;
+    min-width:0; flex:1;
+  }
+  .toc a {
+    display:block; color:var(--accent); text-decoration:none;
+    font-size:12px; font-weight:600; line-height:1.25;
+    padding:6px 8px; border-radius:999px; text-align:center;
+    background:rgba(255,255,255,.75); border:1px solid transparent;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .toc a:hover { background:#fff; border-color:var(--line); text-decoration:none; }
+  .top-btn {
+    flex-shrink:0;
+    border:none; cursor:pointer; text-decoration:none;
+    padding:8px 12px; border-radius:999px;
+    font-size:11px; font-weight:700; color:#fff;
+    background:var(--pill-grad);
+    box-shadow:0 2px 8px rgba(102,194,185,.35);
+    white-space:nowrap;
+  }
+  .top-btn:hover { filter:brightness(.97); }
+  .section[id], .page-head[id] { scroll-margin-top:108px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .split-box {
+    border:2px solid var(--line); border-radius:14px; padding:14px 16px;
+    background:rgba(255,255,255,.45);
+  }
+  .split-box.ai { border-color:#9dcdc8; background:rgba(45,138,130,.06); }
+  .split-box.human { border-color:#e2c896; background:rgba(166,124,40,.06); }
+  .split-box h4 {
+    margin:0 0 10px; font-size:14px; font-weight:700;
+    padding-bottom:8px; border-bottom:1px dashed var(--line-soft);
+  }
+  .split-box.ai h4 { color:var(--ok); }
+  .split-box.human h4 { color:var(--warn); }
+  .time-save {
+    display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center;
+    margin:16px 0; padding:16px; border-radius:14px;
+    background:rgba(255,255,255,.5); border:1px solid var(--line);
+  }
+  .time-box { text-align:center; }
+  .time-box .label { font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .time-box .value { font-size:22px; font-weight:700; color:var(--emerald-dark); }
+  .time-box .note { font-size:12px; color:var(--muted); margin-top:4px; }
+  .time-arrow { font-size:24px; color:var(--accent); font-weight:700; }
+  .time-save-result {
+    grid-column:1 / -1; text-align:center; padding-top:12px;
+    border-top:1px dashed var(--line-soft);
+    font-size:15px; font-weight:600; color:var(--ok);
+  }
+  /* Architecture diagram */
+  .arch-diagram { margin:16px 0; }
+  .arch-row {
+    display:flex; justify-content:center; align-items:center; gap:10px;
+    flex-wrap:wrap; margin-bottom:10px;
+  }
+  .arch-node {
+    border:2px solid var(--line); border-radius:12px; padding:10px 14px;
+    background:#fff; min-width:120px; text-align:center; font-size:13px;
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+  }
+  .arch-node strong { display:block; font-size:13px; color:var(--emerald-dark); margin-bottom:2px; }
+  .arch-node span { font-size:11px; color:var(--muted); }
+  .arch-node.entry { border-color:var(--accent); background:rgba(61,127,168,.06); }
+  .arch-node.core { border-color:var(--emerald-dark); background:rgba(102,194,185,.1); min-width:140px; }
+  .arch-node.rule { border-color:#3d6f96; background:rgba(61,127,168,.08); }
+  .arch-node.llm { border-color:var(--emerald-dark); background:rgba(102,194,185,.12); }
+  .arch-node.out { border-color:var(--ok); background:rgba(45,138,130,.08); }
+  .arch-node a { color:inherit; text-decoration:none; }
+  .arch-node a:hover strong { text-decoration:underline; }
+  .arch-arrow { color:var(--muted); font-size:18px; font-weight:700; }
+  .arch-fork {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+    max-width:720px; margin:0 auto 10px;
+  }
+  .arch-merge {
+    display:flex; justify-content:center; margin:10px 0;
+  }
+  .arch-formula {
+    font-family:Consolas,"Cascadia Mono",monospace; font-size:12.5px;
+    background:#fbfdfc; border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; line-height:1.5; margin:12px 0;
+  }
+  /* Score pipeline */
+  .score-pipeline { display:flex; flex-direction:column; gap:10px; margin:12px 0; }
+  .score-step {
+    border:1px solid var(--line); border-radius:10px;
+    border-left:4px solid var(--emerald-dark);
+    padding:12px 14px 12px 16px; background:rgba(255,255,255,.55);
+  }
+  .score-step-label {
+    font-size:11px; font-weight:700; letter-spacing:.06em;
+    color:var(--emerald-dark); margin-bottom:6px;
+  }
+  .score-step-body strong { display:block; font-size:13px; color:var(--fg); margin-bottom:4px; }
+  .score-step-body p { margin:0; font-size:13px; color:var(--fg); }
+  .score-step-body .detail { font-size:12px; color:var(--muted); margin-top:6px; font-family:Consolas,monospace; line-height:1.45; }
+  .score-labels {
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;
+  }
+  .score-label {
+    font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px;
+    border:1px solid var(--line);
+  }
+  .score-label.high { background:rgba(45,138,130,.12); color:var(--ok); }
+  .score-label.mid { background:rgba(166,124,40,.1); color:var(--warn); }
+  .score-label.low { background:rgba(102,102,102,.1); color:#666; }
+  /* Pipeline flow (bat execution) */
+  .pipe-flow { margin:12px 0; }
+  .pipe-phase {
+    border:1px solid var(--line); border-radius:14px; margin-bottom:8px;
+    background:rgba(255,255,255,.45); overflow:hidden;
+  }
+  .pipe-phase-head {
+    padding:8px 14px; font-size:13px; font-weight:700;
+    display:flex; align-items:center; gap:8px;
+    border-bottom:1px dashed var(--line-soft);
+  }
+  .pipe-phase-head.rule { background:rgba(61,127,168,.08); color:#3d6f96; }
+  .pipe-phase-head.llm { background:rgba(102,194,185,.12); color:var(--emerald-dark); }
+  .pipe-phase-head.entry { background:rgba(61,127,168,.06); color:var(--accent); }
+  .pipe-phase-body { padding:10px 14px; font-size:13px; }
+  .pipe-arrow { text-align:center; color:var(--muted); font-size:16px; margin:2px 0; }
+  .csv-entity {
+    border:1px solid var(--line); border-radius:12px; margin-bottom:14px;
+    background:rgba(255,255,255,.4); overflow:hidden;
+  }
+  .csv-entity-head {
+    padding:10px 14px; background:var(--th-base);
+    border-bottom:1px solid var(--line-soft);
+    display:flex; flex-wrap:wrap; align-items:baseline; gap:8px;
+  }
+  .csv-entity-head h4 { margin:0; font-size:14px; color:var(--emerald-dark); }
+  .csv-entity-head .pk { font-size:11px; color:var(--muted); font-family:Consolas,monospace; }
+  .csv-entity .table-wrap { margin:0; border:none; border-radius:0; }
+  .mermaid-wrap {
+    border:1px solid var(--line); border-radius:14px;
+    background:#fff; padding:16px 12px; margin:12px 0 16px;
+    overflow-x:auto;
+  }
+  .req-yes { color:var(--ok); font-weight:600; font-size:12px; }
+  .req-no { color:var(--muted); font-size:12px; }
+  .key-pk { color:var(--accent); font-size:12px; font-weight:600; }
+  .key-fk { color:#3d6f96; font-size:12px; }
+  .key-none { color:var(--muted); font-size:12px; }
+  .node-card {
+    border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+    margin-bottom:10px; background:rgba(255,255,255,.4);
+  }
+  .node-card h4 { margin:0 0 6px; font-size:14px; color:var(--emerald-dark); }
+  .node-card p { margin:0; font-size:13px; color:var(--fg); }
+  .foot { margin-top:28px; color:var(--muted); font-size:13px; }
+  @media (max-width:768px) {
+    .wrap { padding:16px 12px 36px; }
+    .wrap.head-wrap { padding-bottom:12px; }
+    .demo-steps, .two-col, .arch-fork, .time-save { grid-template-columns:1fr; }
+    .time-arrow { display:none; }
+    .page-head h1 { font-size:22px; }
+    .agenda-inner { gap:8px; padding:8px 12px; align-items:flex-start; }
+    .agenda-label { margin-top:2px; }
+    .toc { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .toc a { font-size:11px; white-space:normal; }
+    .section[id], .page-head[id] { scroll-margin-top:140px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap head-wrap">
+  <header class="page-head" id="top">
+    <p class="sub">デモ資料</p>
+    <h1>開発提案 AI エージェント</h1>
+    <p class="sub">要件定義 v1.1 準拠</p>
+    <div class="meta-chips">
+      <span class="chip">TypeScript CLI</span>
+      <span class="chip">Gemini API</span>
+      <span class="chip">CSV → HTML レポート</span>
+      <span class="chip live">§2 は画面共有デモ</span>
+    </div>
+  </header>
+</div>
+
+<div class="agenda-bar" aria-label="デモ進行">
+  <div class="agenda-inner">
+    <span class="agenda-label">目次</span>
+    <ul class="toc">
+      <li><a href="#s1">利用シナリオ</a></li>
+      <li><a href="#s2">動作</a></li>
+      <li><a href="#s3">アーキテクチャ</a></li>
+      <li><a href="#s4">LLM/ツール</a></li>
+      <li><a href="#s5">AI開発</a></li>
+      <li><a href="#s6">振り返り</a></li>
+      <li><a href="#s7">実務投入</a></li>
+    </ul>
+    <a class="top-btn" href="#top">TOPに戻る</a>
+  </div>
+  <div class="agenda-gap" aria-hidden="true"></div>
+  <hr class="agenda-rule" />
+</div>
+
+<div class="wrap body-wrap">
+
+  <!-- 1 -->
+  <section class="panel section" id="s1">
+    <div class="panel-head"><h2>作成したエージェントの利用シナリオ</h2></div>
+    <div class="panel-body">
+      <h3 class="sub">どんなエージェントか</h3>
+      <p>運用中のサービス・パッケージについて、複数案件の要望を横断整理し「次に何を作るか」を根拠つきで提案する TypeScript エージェントです。</p>
+
+      <h3 class="sub">誰が・いつ・何のために使うか</h3>
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><th style="width:120px;">想定ユーザー</th><td>プロダクトマネージャー（PdM）</td></tr>
+            <tr><th>タイミング</th><td>週次の優先度会議の<strong>前日〜当日朝</strong></td></tr>
+            <tr><th>入力</th><td>案件 CSV・要望 CSV・プロダクト情報 CSV（社内で管理）</td></tr>
+            <tr><th>出力</th><td>HTML 提案レポート（テーマ・優先度・提案・根拠・影響案件）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">業務の流れ（Before → After）</h3>
+      <div class="two-col">
+        <div class="callout warn">
+          <strong>Before（手作業）</strong>
+          <ul class="compact">
+            <li>案件ごとに要望を読み、表現の違いで同じ要望を見落とす</li>
+            <li>年間利益・契約状況を頭の中で比較し、優先度が属人的</li>
+            <li>会議前 <strong>1〜2 時間</strong> を整理に使う</li>
+          </ul>
+        </div>
+        <div class="callout ok">
+          <strong>After（本エージェント）</strong>
+          <ul class="compact">
+            <li>CSV を置いて実行 → テーマ横断のレポートが <strong>数分</strong> で完成</li>
+            <li>優先度付けはルール化を行い定量的に表現</li>
+            <li>レポートを読んで<strong>採否だけ</strong>判断する（約 5〜10 分）</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="time-save">
+        <div class="time-box">
+          <div class="label">Before</div>
+          <div class="value">60〜120 分</div>
+          <div class="note">要望整理・優先度の口頭調整</div>
+        </div>
+        <div class="time-arrow">→</div>
+        <div class="time-box">
+          <div class="label">After</div>
+          <div class="value">10〜15 分</div>
+          <div class="note">実行 数分 ＋ レポート確認・採否 5〜10 分</div>
+        </div>
+        <div class="time-save-result">週次あたりおおよそ 45〜105 分の短縮（会議前の整理工数）</div>
+      </div>
+
+      <h3 class="sub">サンプルデータの設定（デモ用）</h3>
+      <ul class="compact">
+        <li>プロダクト: <strong>MCP Manager</strong>（AI エージェント管理基盤）</li>
+        <li>案件 <strong>10 件</strong>（株式会社A〜J）、要望 <strong>21 件</strong>（各案件 1〜3 件）</li>
+        <li>未契約案件 <strong>2 件</strong> — 契約前の要望はスコアを減少させて判断</li>
+        <li>利益は帯区分ではなく <strong>年間利益（円）</strong> — 100 万円 = 1 点でベーススコア算出</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="panel section" id="s2">
+    <div class="panel-head"><h2>実際の動作</h2></div>
+    <div class="panel-body">
+      <div class="callout live">
+        <strong>画面共有デモ</strong> — 以下の LLM モード手順で実行し、生成された <code>output/report.html</code> を見せます。
+      </div>
+
+      <h3 class="sub">事前準備（評価者向け）</h3>
+      <ol class="compact">
+        <li><code>.env.example</code> を <code>.env</code> にコピー</li>
+        <li><code>GOOGLE_API_KEY</code> を設定（<a href="https://aistudio.google.com/apikey">Google AI Studio</a> で取得）</li>
+        <li><code>npm ci --ignore-scripts &amp;&amp; npm run build</code></li>
+        <li>入力 CSV を <code>data/production/</code> に配置（デモは <code>data/sample/</code> をコピー）</li>
+      </ol>
+
+      <h3 class="sub">実行手順（LLM モード）</h3>
+      <div class="demo-steps">
+        <div class="demo-step">
+          <div class="num">1</div>
+          <h4>ランチャー実行</h4>
+          <p>Windows: <code>scripts\report.bat</code><br>Mac: <code>./scripts/report.sh</code></p>
+        </div>
+        <div class="demo-step">
+          <div class="num">2</div>
+          <h4>処理完了を待つ</h4>
+          <p>Gemini API でデータ読込 → テーマ分類 → 提案文生成 → HTML 保存</p>
+        </div>
+        <div class="demo-step">
+          <div class="num">3</div>
+          <h4>レポート確認</h4>
+          <p><code>output/report.html</code> がブラウザで開く</p>
+        </div>
+      </div>
+
+      <h3 class="sub">デモで見せるポイント（レポート側）</h3>
+      <ol class="compact">
+        <li><strong>サマリー表</strong> — テーマ名・スコア・提案内容がスコア降順</li>
+        <li><strong>「データのエクスポート機能」</strong> — 8 件・複数社 → 優先度「高」、新規追加</li>
+        <li><strong>根拠</strong> — 要望 ID、年間利益・ランク・契約状況、プロダクト機能一覧を参照</li>
+        <li><strong>監査ログ改善</strong> — 3 件ボーナス、既存機能 F003 の改善提案</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="panel section" id="s3">
+    <div class="panel-head"><h2>アーキテクチャと設計意図</h2></div>
+    <div class="panel-body">
+      <h3 class="sub">アーキテクチャ</h3>
+      <p style="font-size:14px;color:var(--muted);margin:0 0 12px;">Tools は Runner の兄弟ではなく、<strong>Gemini の Function Calling（① 読込フェーズ）</strong>で Runner が実行する。Scoring と save_report は Runner が直接呼ぶ。</p>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart TD
+    CLI[TypeScript CLI] --> Runner[Agent Runner]
+
+    Runner <-->|① 読込 FC ループ<br/>② 分類 · ④ 提案| Gemini[Gemini API<br/>gemini-3.6-flash]
+
+    Gemini -->|function call| Handlers[Tool Handlers]
+    Handlers --> LoadTools["load_projects · load_requests<br/>load_product · get_scoring_policy"]
+    LoadTools --> CSV[(CSV data/)]
+    LoadTools --> Config[(config/scoring.json)]
+    Handlers -->|実行結果| Runner
+
+    Runner --> Scoring[③ Scoring<br/>ルールベース]
+    Scoring --> Runner
+
+    Runner --> Render[Report Render]
+    Render --> Save[save_report<br/>Runner 直接呼出]
+    Save --> Output[(HTML output/)]
+        </div>
+      </div>
+
+      <h3 class="sub">処理フロー（<code>report.bat</code> → LLM モード）</h3>
+      <p style="font-size:14px;color:var(--muted);margin:0 0 12px;">デモで実行する bat/sh は、以下の順序で処理します（並列ではなく段階実行）。</p>
+      <div class="pipe-flow">
+        <div class="pipe-phase" id="node-cli">
+          <div class="pipe-phase-head entry">起動 · <code>scripts/report.bat</code> → <code>cli.ts</code></div>
+          <div class="pipe-phase-body"><code>data/production/</code> を指定して <code>runAgent()</code> を呼び出す。LLM モードでは <code>.env</code> の API キーを使用。</div>
+        </div>
+        <div class="pipe-arrow">↓</div>
+        <div class="pipe-phase" id="node-runner">
+          <div class="pipe-phase-head rule">Agent Runner · <code>runner.ts</code>（司令塔）</div>
+          <div class="pipe-phase-body">以降のフェーズを順番に制御。スコア計算と HTML 生成は Runner が直接呼び出す（LLM に任せない）。</div>
+        </div>
+        <div class="pipe-arrow">↓</div>
+        <div class="pipe-phase" id="node-phase1">
+          <div class="pipe-phase-head llm">フェーズ 1 · LLM + Tools（データ読込）</div>
+          <div class="pipe-phase-body">
+            Gemini が Function Calling で 4 ツールを呼び出し: <code>load_projects</code> · <code>load_requests</code> · <code>load_product</code> · <code>get_scoring_policy</code><br>
+            実処理は <code>tools/handlers.ts</code>（プログラム）が CSV / JSON を読む。
+          </div>
+        </div>
+        <div class="pipe-arrow">↓</div>
+        <div class="pipe-phase" id="node-phase2">
+          <div class="pipe-phase-head llm">フェーズ 2 · LLM（テーマ分類）</div>
+          <div class="pipe-phase-body">要望をテーマにグルーピング（表現が違っても同義をまとめる）。JSON で分類結果を返す。</div>
+        </div>
+        <div class="pipe-arrow">↓</div>
+        <div class="pipe-phase" id="node-scoring">
+          <div class="pipe-phase-head rule">フェーズ 3 · Scoring（優先度算出）</div>
+          <div class="pipe-phase-body"><code>scoring/calculate.ts</code> が <code>config/scoring.json</code> に従いテーマごとのスコアを算出。<strong>LLM は使わない。</strong></div>
+        </div>
+        <div class="pipe-arrow">↓</div>
+        <div class="pipe-phase" id="node-phase4">
+          <div class="pipe-phase-head llm">フェーズ 4 · LLM（提案文・根拠）</div>
+          <div class="pipe-phase-body">スコア付きテーマごとに、新規/改善・提案文・根拠・参照プロダクト情報を JSON で生成。</div>
+        </div>
+        <div class="pipe-arrow">↓</div>
+        <div class="pipe-phase" id="node-render">
+          <div class="pipe-phase-head rule">フェーズ 5 · Report Render + 保存</div>
+          <div class="pipe-phase-body"><code>report/render.ts</code> で HTML 化 → <code>save_report</code> で <code>output/report.html</code> に書き出し → ランチャーがブラウザで開く。</div>
+        </div>
+      </div>
+
+      <div class="acc-wrap">
+        <details class="acc">
+          <summary>
+            <span class="acc-ctrl">
+              <span class="acc-arrow" aria-hidden="true">▸</span>
+              <span class="acc-toggle-open">開く</span>
+              <span class="acc-toggle-close">とじる</span>
+            </span>
+            <span class="acc-head-text">
+              <span class="acc-title">優先度スコア</span>
+              <span class="acc-lead">要望ごとの利益・ランク・契約状況をもとにテーマ単位でスコアを集計し、高 / 中 / 低の優先度ラベルを付ける（<code>config/scoring.json</code> 準拠・LLM は使わない）。</span>
+            </span>
+          </summary>
+          <div class="acc-body">
+      <div class="score-pipeline">
+        <div class="score-step">
+          <div class="score-step-label">STEP 1</div>
+          <div class="score-step-body">
+            <strong>要望 1 件のスコア</strong>
+            <p>利益ベース点 × 顧客ランク倍率 × 契約倍率</p>
+            <div class="detail">利益ベース点 = clamp(round(annual_profit_yen ÷ 100万), 10, 100)　|　A/B/C = 1.2 / 1.0 / 0.8　|　契約未済 = ×0.3</div>
+          </div>
+        </div>
+        <div class="score-step">
+          <div class="score-step-label">STEP 2</div>
+          <div class="score-step-body">
+            <strong>テーマ基本点</strong>
+            <p>そのテーマに属する要望スコアの合計</p>
+          </div>
+        </div>
+        <div class="score-step">
+          <div class="score-step-label">STEP 3</div>
+          <div class="score-step-body">
+            <strong>要望件数ボーナス</strong>
+            <p>要望が 3 件以上 → テーマ基本点 × 1.5</p>
+          </div>
+        </div>
+        <div class="score-step">
+          <div class="score-step-label">STEP 4</div>
+          <div class="score-step-body">
+            <strong>複数案件ボーナス</strong>
+            <p>影響案件が 2 社以上 → 上記 × (1 + 0.1 × (案件数 − 1))</p>
+          </div>
+        </div>
+        <div class="score-step">
+          <div class="score-step-label">STEP 5</div>
+          <div class="score-step-body">
+            <strong>優先度ラベル</strong>
+            <div class="score-labels">
+              <span class="score-label high">高 ≥ 150</span>
+              <span class="score-label mid">中 ≥ 80</span>
+              <span class="score-label low">低 ≥ 30</span>
+            </div>
+          </div>
+        </div>
+      </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="panel section" id="s4">
+    <div class="panel-head"><h2>LLM API / ツール / データ保存の設計</h2></div>
+    <div class="panel-body">
+      <h3 class="sub">LLM API（実行時）</h3>
+      <ul class="compact">
+        <li><strong>Google Gemini API</strong>（デフォルト <code>gemini-3.6-flash</code>）</li>
+        <li>API キーは <code>.env</code> の <code>GOOGLE_API_KEY</code> のみ — リポジトリに含めない</li>
+        <li>実装時の AI（Cursor 等）とは別物 — 実行時は Gemini のみ使用</li>
+      </ul>
+
+      <h3 class="sub">ツール</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ツール名</th><th>動作の概要</th></tr></thead>
+          <tbody>
+            <tr><td><code>load_projects</code></td><td><code>projects.csv</code> から案件ごとの年間利益・顧客ランク・契約状況・契約期間を取得</td></tr>
+            <tr><td><code>load_requests</code></td><td><code>requests.csv</code> から要望本文・紐付く案件 ID・入手元・記録日を取得</td></tr>
+            <tr><td><code>load_product</code></td><td>現行機能一覧とプロダクト方針・制約を取得し、新規/改善判断の参照元にする</td></tr>
+            <tr><td><code>get_scoring_policy</code></td><td>優先度の倍率・閾値ルール（<code>scoring.json</code>）を Runner / LLM に渡す</td></tr>
+            <tr><td><code>save_report</code></td><td>生成した HTML レポートを指定パス（<code>output/report.html</code>）に保存</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">データ保存の設計</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>区分</th><th>置き場所</th><th>備考</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>本番想定（入力）</td>
+              <td><code>data/production/</code></td>
+              <td>社内限定。顧客名・利益・要望本文を Git に載せない</td>
+            </tr>
+            <tr>
+              <td>出力</td>
+              <td><code>output/report.html</code></td>
+              <td>ブラウザ共有・議事録添付。生成のたびに上書き or 日付付きファイル名</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout ok">
+        <strong>CSV 設計意図:</strong> 列名・粒度は DB テーブルに移行しやすい構成（案件 ID・要望 ID 等の正規化）としています。初期は CSV で手軽に始め、セキュリティ要件や企業要望に応じて <strong>DB 直接参照</strong> や <strong>スプレッドシート連携</strong> に差し替え可能です。Tools の読込層だけ差し替えれば Runner / LLM の流れは維持できます。
+      </div>
+
+      <div class="acc-wrap">
+        <details class="acc">
+          <summary>
+            <span class="acc-ctrl">
+              <span class="acc-arrow" aria-hidden="true">▸</span>
+              <span class="acc-toggle-open">開く</span>
+              <span class="acc-toggle-close">とじる</span>
+            </span>
+            <span class="acc-head-text">
+              <span class="acc-title">CSV 構成</span>
+              <span class="acc-lead">各ファイルは DB テーブル相当。列を追加する場合、値に改行を含むときはダブルクォートで囲む（CSV 標準）。</span>
+            </span>
+          </summary>
+          <div class="acc-body">
+
+      <div class="csv-entity">
+        <div class="csv-entity-head">
+          <h4>projects.csv</h4>
+          <span class="pk">— 案件（1行 = 1顧客案件）</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>カラム</th><th>型</th><th>キー</th><th>必須</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr><td><code>project_id</code></td><td>文字列</td><td><span class="key-pk">PK</span></td><td><span class="req-yes">必須</span></td><td>案件識別子（例: P001）</td></tr>
+              <tr><td><code>project_name</code></td><td>文字列</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>案件名称（サンプルは株式会社A〜J）</td></tr>
+              <tr><td><code>period_start</code></td><td>日付</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>契約開始日（YYYY-MM-DD）</td></tr>
+              <tr><td><code>period_end</code></td><td>日付</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>契約終了日</td></tr>
+              <tr><td><code>annual_profit_yen</code></td><td>整数</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>年間利益（円）。優先度スコアのベース算出に使用</td></tr>
+              <tr><td><code>customer_rank</code></td><td>enum</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>顧客ランク A / B / C</td></tr>
+              <tr><td><code>contract_status</code></td><td>enum</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>契約中 / 契約未済</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="csv-entity">
+        <div class="csv-entity-head">
+          <h4>requests.csv</h4>
+          <span class="pk">— 要望（1行 = 1要望）</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>カラム</th><th>型</th><th>キー</th><th>必須</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr><td><code>request_id</code></td><td>文字列</td><td><span class="key-pk">PK</span></td><td><span class="req-yes">必須</span></td><td>要望識別子（例: R001）</td></tr>
+              <tr><td><code>project_id</code></td><td>文字列</td><td><span class="key-fk">FK</span></td><td><span class="req-yes">必須</span></td><td>紐付く案件 ID（projects.project_id）</td></tr>
+              <tr><td><code>request_text</code></td><td>文字列</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>要望本文（テーマ分類の入力）</td></tr>
+              <tr><td><code>source</code></td><td>文字列</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>入手元（定例、問い合わせ等）</td></tr>
+              <tr><td><code>created_at</code></td><td>日付</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>記録日</td></tr>
+              <tr><td><code>urgency</code></td><td>文字列</td><td><span class="key-none">—</span></td><td><span class="req-no">任意</span></td><td>緊度高の目印（高 / 空）</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="csv-entity">
+        <div class="csv-entity-head">
+          <h4>product_features.csv</h4>
+          <span class="pk">— 現行機能（新規/改善判断の参照）</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>カラム</th><th>型</th><th>キー</th><th>必須</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr><td><code>feature_id</code></td><td>文字列</td><td><span class="key-pk">PK</span></td><td><span class="req-yes">必須</span></td><td>機能 ID（例: F001）</td></tr>
+              <tr><td><code>feature_name</code></td><td>文字列</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>機能名称</td></tr>
+              <tr><td><code>description</code></td><td>文字列</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>機能の概要</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="csv-entity">
+        <div class="csv-entity-head">
+          <h4>product_meta.csv</h4>
+          <span class="pk">— プロダクト方針・制約（キー値形式）</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>カラム</th><th>型</th><th>キー</th><th>必須</th><th>説明</th></tr></thead>
+            <tbody>
+              <tr><td><code>meta_key</code></td><td>文字列</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td><code>product_policy</code> / <code>quarterly_focus</code> / <code>development_constraint</code> 等。同一 key の複数行可</td></tr>
+              <tr><td><code>meta_value</code></td><td>文字列</td><td><span class="key-none">—</span></td><td><span class="req-yes">必須</span></td><td>方針・今期重点・開発制約の本文</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="callout ok" style="margin-top:12px;">
+        <strong>リレーション:</strong> <code>requests.project_id</code> → <code>projects.project_id</code>。要望は必ず 1 案件に属する。プロダクト CSV は案件横断の共通マスタ。
+      </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="panel section" id="s5">
+    <div class="panel-head"><h2>Claude Code 等の AI 開発ツールをどう使ったか</h2></div>
+    <div class="panel-body">
+      <div class="callout ok">
+        <strong>区別:</strong> 開発時は主に <strong>Cursor</strong> で実装。設計相談に <strong>ChatGPT</strong> を利用。実行時の LLM は <strong>Gemini API</strong>（別物）。
+      </div>
+
+      <h3 class="sub">開発フロー（Cursor 中心）</h3>
+      <ol class="flow">
+        <li><strong>要件定義 HTML を正とする</strong><span>用語・完成基準を固定し、Cursor が <code>AGENT.md</code> 経由で参照</span></li>
+        <li><strong>型 → スコア → Tools → Runner の順で実装</strong><span>Cursor でボイラープレート・CSV パーサ・テストを生成</span></li>
+        <li><strong>Gemini 接続・エラー対応</strong><span>Function Calling・モデル世代差の修正も Cursor で反復</span></li>
+        <li><strong><code>--dry-run</code> で無 API 確認 → LLM で最終確認</strong><span>修正サイクルは dry-run、提出前に API 実行で品質確認</span></li>
+        <li><strong>デモ資料・要件定義を HTML 化</strong><span>README は提出要件として用意したが、発表・評価向けに読みやすい HTML を追加作成</span></li>
+      </ol>
+
+      <h3 class="sub">ChatGPT の利用（設計相談）</h3>
+      <ul class="compact">
+        <li>優先度ルールの式・ボーナス設計のたたき台</li>
+        <li>ツール分割（5 種）と LLM / ルールの分担境界の整理</li>
+        <li>サンプルデータの件数・未契約案件数などデモシナリオの調整</li>
+      </ul>
+
+      <h3 class="sub">AI に任せたこと / 人が決めたこと</h3>
+      <div class="two-col">
+        <div class="split-box ai">
+          <h4>AI に任せたこと（Cursor 等）</h4>
+          <ul class="compact">
+            <li>ボイラープレート・CSV パーサ・HTML テンプレート</li>
+            <li>Gemini Function Calling のエラー対応コード</li>
+            <li>README・設計メモ・ランチャー script の下書き</li>
+            <li>ユニットテストの雛形</li>
+          </ul>
+        </div>
+        <div class="split-box human">
+          <h4>人が決めたこと</h4>
+          <ul class="compact">
+            <li>優先度ルール（150/80/30、利益ベース、100 万円 = 1 点）</li>
+            <li>LLM とルールの分担 — スコアは必ずプログラム側</li>
+            <li>サンプル 10 案件・未契約 2・要望 1〜3 件の構成</li>
+            <li>採否は人、CSV→DB 移行可能な列設計</li>
+            <li>提出物として HTML 資料を整備する方針</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="panel section" id="s6">
+    <div class="panel-head"><h2>詰まった点、妥協した点、改善したい点</h2></div>
+    <div class="panel-body">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>分類</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>詰まった</strong></td>
+              <td>
+                <ul class="compact">
+                  <li>AI エージェントの定義理解</li>
+                  <li>実行方法の策定</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>妥協</strong></td>
+              <td>
+                <ul class="compact">
+                  <li>優先度スコアの詳細設定</li>
+                  <li>データ設計</li>
+                  <li>詳細設計書の作成</li>
+                  <li>テスト項目書の作成</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>改善したい</strong></td>
+              <td>
+                <ul class="compact">
+                  <li>サービス、顧客に合わせた優先度の定量化設計</li>
+                  <li>セキュリティ面の設計、環境構築の見直し</li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="panel section" id="s7">
+    <div class="panel-head"><h2>実務投入するなら何を追加するか</h2></div>
+    <div class="panel-body">
+      <ul class="compact">
+        <li><strong>採択→実装→CI/CD の自動化</strong> — 要承認機能</li>
+        <li><strong>AI エージェント業務環境での実行環境</strong></li>
+        <li>
+          <strong>役職・役割ごとの関連作業の自動化・ツール組み込み</strong>
+          <ul class="compact" style="margin:8px 0 0;">
+            <li><strong>起票者</strong> — 要望の追加、ヒアリング不足事項の確認</li>
+            <li><strong>責任者</strong> — 課題の吸い上げ、優先度調整</li>
+            <li><strong>実装者</strong> — 採択状況の確認、設計の検討、資料更新</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="foot">
+    関連: <a href="要件定義.html">要件定義.html</a> ·
+    <a href="design-tools-and-scoring.md">design-tools-and-scoring.md</a> ·
+    <a href="report-template.html">report-template.html</a> ·
+    リポジトリ <code>README.md</code>
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      primaryColor: "#eef5f3",
+      primaryTextColor: "#333",
+      primaryBorderColor: "#66c2b9",
+      lineColor: "#3a9d94",
+      fontFamily: '"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic UI",sans-serif'
+    },
+    flowchart: { curve: "basis", padding: 12 }
+  });
+</script>
+</body>
+</html>

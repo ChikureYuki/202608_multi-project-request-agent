@@ -1,0 +1,36 @@
+{
+  "description": "テーマごとの優先度スコア算出ルール（初期設定）",
+  "profit_base_score": {
+    "profit_yen_per_point": 1000000,
+    "min_base_score": 10,
+    "max_base_score": 100
+  },
+  "customer_rank_multiplier": {
+    "A": 1.2,
+    "B": 1.0,
+    "C": 0.8
+  },
+  "unsigned_contract_multiplier": 0.3,
+  "unsigned_contract_statuses": ["契約未済", "pending", "unsigned"],
+  "multi_request_threshold": 3,
+  "multi_request_bonus_multiplier": 1.5,
+  "multi_project_bonus": {
+    "enabled": true,
+    "multiplier_per_extra_project": 0.1,
+    "min_projects": 2
+  },
+  "priority_labels": [
+    { "min_score": 150, "label": "高" },
+    { "min_score": 80, "label": "中" },
+    { "min_score": 30, "label": "低" },
+    { "min_score": 0, "label": "低" }
+  ],
+  "calculation_steps": [
+    "1. 要望ごと: profit_base = clamp(round(annual_profit_yen / profit_yen_per_point), min_base_score, max_base_score)",
+    "2. 要望ごと: per_request = profit_base × customer_rank_multiplier × (契約未済なら unsigned_contract_multiplier、それ以外 1.0)",
+    "3. テーマごと: theme_base = そのテーマに属する per_request の合計",
+    "4. 要望件数ボーナス: 要望数 >= multi_request_threshold なら theme_base × multi_request_bonus_multiplier",
+    "5. 複数案件ボーナス: 影響案件数 >= min_projects なら 上記 × (1 + multiplier_per_extra_project × (案件数 - 1))",
+    "6. ラベル: priority_labels の min_score 降順で 高/中/低 を付与"
+  ]
+}

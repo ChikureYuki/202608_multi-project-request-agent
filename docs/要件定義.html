@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>要件定義 — 複数案件の要望から次の開発を提案するAIエージェント</title>
+<style>
+  :root {
+    --emerald:#66c2b9; --emerald-dark:#3a9d94; --emerald-light:#b8e4df;
+    --card:#f5faf9; --card-grad:linear-gradient(145deg,#f9fcfb 0%,#eef5f3 100%);
+    --line:#d0e0dc; --line-soft:#ddeae7;
+    --fg:#333333; --muted:#666666;
+    --shadow:0 10px 30px rgba(0,0,0,.05);
+    --pill-grad:linear-gradient(90deg,#8ed9d2 0%,#66c2b9 55%,#52b5ac 100%);
+    --th-base:#ecf4f2; --th-fg:#555555;
+    --accent:#3d7fa8; --warn:#d45d5d; --soon:#a67c28; --ok:#2d8a82;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; color:var(--fg); font-size:15px;
+    font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic UI",sans-serif;
+    line-height:1.55; -webkit-font-smoothing:antialiased;
+    background:#f2f6f5;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:28px 20px 48px; }
+  .wrap.head-wrap { padding-bottom:16px; }
+  .wrap.body-wrap { padding-top:18px; }
+  .page-head { margin-bottom:0; }
+  .page-head h1 { font-size:26px; font-weight:700; margin:0 0 8px; color:var(--emerald-dark); }
+  .sub { color:var(--muted); font-size:13px; }
+  .sub.large { font-size:14px; }
+  .meta-chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
+  .chip {
+    font-size:12px; padding:4px 12px; border-radius:50px;
+    background:rgba(102,194,185,.15); border:1px solid var(--line); color:var(--fg);
+  }
+  .chip.draft {
+    background:rgba(166,124,40,.12); border-color:#e2c896; color:var(--soon);
+  }
+  .badge {
+    display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px;
+    background:rgba(166,124,40,.12); color:var(--soon); margin-right:6px; font-weight:600;
+  }
+  .panel {
+    background:var(--card-grad); border:1px solid var(--line); border-radius:20px;
+    margin-bottom:18px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  .panel-head {
+    padding:14px 20px 12px; border-bottom:1px dashed var(--line);
+    background:var(--pill-grad);
+  }
+  .panel-head h2 { font-size:17px; font-weight:600; margin:0; color:#fff; }
+  .panel-body { padding:16px 20px 18px; }
+  .section { margin-bottom:8px; }
+  .table-wrap {
+    border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    margin:12px 0; background:rgba(255,255,255,.35);
+  }
+  table { width:100%; border-collapse:collapse; }
+  th, td {
+    border-bottom:1px dashed var(--line-soft); padding:10px 12px;
+    vertical-align:top; font-size:14px; text-align:left;
+  }
+  thead th { background:var(--th-base); color:var(--th-fg); font-weight:600; }
+  tbody tr:nth-child(even) td { background:rgba(102,194,185,.07); }
+  tbody tr:hover td { background:rgba(102,194,185,.14); }
+  h3.sub { font-size:15px; margin:16px 0 8px; color:var(--emerald-dark); }
+  h3.sub:first-child { margin-top:0; }
+  ul.compact, ol.compact { margin:6px 0 0; padding-left:1.25em; font-size:14px; }
+  ul.compact li, ol.compact li { margin-bottom:5px; }
+  .callout {
+    padding:12px 14px; border-radius:12px; margin:12px 0;
+    background:rgba(61,127,168,.08); border:1px dashed #9ec4db; font-size:14px;
+  }
+  .callout.warn {
+    background:rgba(212,93,93,.06); border-color:#e8b0b0;
+  }
+  .callout.ok {
+    background:rgba(45,138,130,.08); border-color:#9dcdc8;
+  }
+  .example {
+    border:1px solid var(--line); border-radius:12px;
+    background:#fbfdfc; padding:14px 16px; margin:12px 0;
+  }
+  .example h4 {
+    margin:0 0 10px; font-size:13px; color:var(--muted);
+    font-weight:600; letter-spacing:.04em;
+  }
+  .example dl { margin:0; font-size:14px; }
+  .example dt {
+    font-weight:700; color:var(--emerald-dark); font-size:13px;
+    margin-top:10px;
+  }
+  .example dt:first-child { margin-top:0; }
+  .example dd { margin:2px 0 0; padding-left:0; }
+  .flow { counter-reset:flow; list-style:none; margin:0; padding:0; }
+  .flow li {
+    position:relative; padding:0 0 14px 34px; margin:0;
+    border-left:2px solid var(--line-soft); margin-left:11px;
+  }
+  .flow li:last-child { border-left-color:transparent; padding-bottom:0; }
+  .flow li::before {
+    counter-increment:flow; content:counter(flow);
+    position:absolute; left:-12px; top:0;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--pill-grad); color:#fff;
+    font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .flow strong { display:block; font-size:14px; color:var(--fg); }
+  .flow span { display:block; font-size:13px; color:var(--muted); margin-top:2px; }
+  .tag {
+    display:inline-block; font-size:10px; font-weight:700;
+    padding:2px 7px; border-radius:999px; margin-left:6px;
+    vertical-align:middle;
+  }
+  .tag.rule { background:rgba(61,127,168,.12); color:#3d6f96; }
+  .tag.llm { background:rgba(102,194,185,.2); color:var(--emerald-dark); }
+  .tag.human { background:rgba(166,124,40,.14); color:var(--soon); }
+  .agenda-bar {
+    position:sticky; top:0; z-index:50;
+    width:100%;
+    background:#eef5f3;
+    border-top:1px solid var(--line);
+    box-shadow:0 4px 14px rgba(0,0,0,.06);
+  }
+  .agenda-inner {
+    max-width:1080px; margin:0 auto;
+    display:flex; align-items:center; gap:12px;
+    padding:10px 20px;
+  }
+  .agenda-gap {
+    height:14px;
+    background:#eef5f3;
+  }
+  .agenda-rule {
+    display:block;
+    width:100%;
+    height:0;
+    margin:0;
+    border:0;
+    border-top:1px solid var(--line);
+  }
+  .agenda-label {
+    flex-shrink:0;
+    font-size:11px; font-weight:700; color:#fff;
+    letter-spacing:.06em;
+    margin:0; padding:5px 10px; border-radius:999px;
+    background:var(--pill-grad);
+    white-space:nowrap;
+  }
+  .toc {
+    margin:0; padding:0; list-style:none;
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0, 1fr));
+    gap:6px 8px;
+    min-width:0; flex:1;
+  }
+  .toc a {
+    display:block; color:var(--accent); text-decoration:none;
+    font-size:12px; font-weight:600; line-height:1.25;
+    padding:6px 8px; border-radius:999px; text-align:center;
+    background:rgba(255,255,255,.75); border:1px solid transparent;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .toc a:hover {
+    background:#fff; border-color:var(--line); text-decoration:none;
+  }
+  .top-btn {
+    flex-shrink:0;
+    border:none; cursor:pointer; text-decoration:none;
+    padding:8px 12px; border-radius:999px;
+    font-size:11px; font-weight:700; color:#fff;
+    background:var(--pill-grad);
+    box-shadow:0 2px 8px rgba(102,194,185,.35);
+    white-space:nowrap;
+  }
+  .top-btn:hover { filter:brightness(.97); }
+  .section[id], .page-head[id] { scroll-margin-top:108px; }
+  code {
+    background:rgba(102,194,185,.12); padding:2px 6px; border-radius:6px;
+    font-size:12.5px; font-family:Consolas,"Cascadia Mono",monospace;
+  }
+  .foot { margin-top:28px; color:var(--muted); font-size:13px; }
+  .id { font-family:Consolas,monospace; font-size:12px; color:var(--accent); white-space:nowrap; }
+  .prio {
+    display:inline-block; font-size:11px; font-weight:700; padding:2px 8px;
+    border-radius:999px;
+  }
+  .prio.must { background:rgba(212,93,93,.12); color:#a94444; }
+  .prio.should { background:rgba(61,127,168,.12); color:#3d6f96; }
+  .prio.could { background:rgba(102,194,185,.18); color:var(--emerald-dark); }
+  @media (max-width:768px) {
+    .wrap { padding:16px 12px 36px; }
+    .wrap.head-wrap { padding-bottom:12px; }
+    .page-head h1 { font-size:22px; }
+    .agenda-inner { gap:8px; padding:8px 12px; align-items:flex-start; }
+    .agenda-label { margin-top:2px; }
+    .toc { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .toc a { font-size:11px; white-space:normal; }
+    .section[id], .page-head[id] { scroll-margin-top:140px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap head-wrap">
+  <header class="page-head" id="top">
+    <p class="sub"><span class="badge">v1.1</span> 要件定義</p>
+    <h1>複数案件の要望から次の開発を提案するAIエージェント</h1>
+    <p class="sub large">
+      複数案件に散らばった顧客要望を集約し、「次に何を作るべきか」の提案レポートを返す AI エージェント。
+      本資料では、誰がいつ使い、何が入力され、何が出てくるのかを実装前に確定させる。
+    </p>
+    <div class="meta-chips">
+      <span class="chip">版 1.1</span>
+      <span class="chip">更新 2026-08-15</span>
+      <span class="chip">対象読者: 事業責任者 / PdM</span>
+    </div>
+  </header>
+</div>
+
+<div class="agenda-bar">
+  <div class="agenda-inner">
+    <span class="agenda-label">アジェンダ</span>
+    <ul class="toc">
+      <li><a href="#s1">1. 何を解決するか</a></li>
+      <li><a href="#s2">2. ユーザーと使う場面</a></li>
+      <li><a href="#s3">3. スコープ</a></li>
+      <li><a href="#s4">4. 処理の流れ</a></li>
+      <li><a href="#s5">5. 入力と出力</a></li>
+      <li><a href="#s6">6. 機能要件</a></li>
+      <li><a href="#s7">7. 非機能要件・制約</a></li>
+      <li><a href="#s8">8. 完成基準と決定事項</a></li>
+    </ul>
+    <a class="top-btn" href="#top">TOPに戻る</a>
+  </div>
+  <div class="agenda-gap" aria-hidden="true"></div>
+  <hr class="agenda-rule" />
+</div>
+
+<div class="wrap body-wrap">
+
+  <section class="section" id="s1">
+    <div class="panel">
+      <div class="panel-head"><h2>1. 何を解決するか</h2></div>
+      <div class="panel-body">
+        <p>
+          1つのサービスを複数の案件（顧客）に提供していると、要望は案件ごとにバラバラに集まる。
+          言い方が違うだけで中身は同じ要望が並び、売上規模や契約状況も案件ごとに異なるため、
+          「どれから着手すべきか」の判断に毎回時間がかかる。
+        </p>
+
+        <div class="callout">
+          <strong>背景:</strong>
+          複数案件を並行して見る業務で、要望の読み合わせと優先度整理に毎回時間がかかっていた。
+          その経験から、入力データをもとに整理と提案までを自動化する題材を選んだ。
+        </div>
+
+        <h3 class="sub">解決したいこと</h3>
+        <ul class="compact">
+          <li>要望が案件ごと・入手元ごとに分かれており、横断で比較できない</li>
+          <li>「CSV出力がほしい」「一覧をExcelで落としたい」のように、表現が違う同じ要望が重複して数えられる</li>
+          <li>売上規模や契約状況を踏まえた判断が属人的になり、再現しづらい</li>
+          <li>優先度の根拠が個人の記憶に依存し、他メンバーへの説明に時間がかかる</li>
+        </ul>
+
+        <div class="callout ok">
+          <strong>このエージェントがやること:</strong>
+          案件情報・要望・プロダクト情報を読み込み、似た要望をまとめ、
+          売上規模・顧客ランク・契約状況などから算出した重要度を踏まえて優先度を付け、
+          プロダクトの現状を踏まえて新規追加か既存改善かを判断し、
+          <strong>「どの機能を、なぜ、どの優先度で改修/追加すべきか」を根拠つきのレポート</strong>にして返す。
+        </div>
+
+        <p>
+          TypeScript の CLI から実行する業務ツールとして作る。
+          判断材料を揃えるところまでを担当し、最終的な採否と実装計画への反映は人が行う。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s2">
+    <div class="panel">
+      <div class="panel-head"><h2>2. ユーザーと使う場面</h2></div>
+      <div class="panel-body">
+        <h3 class="sub">主ユーザー</h3>
+        <p>
+          <strong>プロダクトマネージャー（PdM）</strong>。
+          複数案件を並行して見ており、週次の優先度会議や次スプリントの計画前に、
+          要望を整理して着手候補を決める立場の人。
+        </p>
+        <p class="sub">
+          副次的に、営業・CS が「自分の案件の要望がどう扱われているか」を確認する用途も想定する。
+        </p>
+
+        <h3 class="sub">使う場面</h3>
+        <p>
+          週次の優先度会議の直前。これまで手作業で要望を並べ直していた 1〜2 時間の準備を、
+          レポート生成と確認に置き換える。
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>タイミング</th>
+                <th>これまで</th>
+                <th>導入後</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>会議前の準備</td>
+                <td>各案件の要望を手作業で読み、スプレッドシートに転記して並べ替える</td>
+                <td>CLI からエージェントを実行し、出てきたレポートを確認・修正する</td>
+              </tr>
+              <tr>
+                <td>優先度の説明</td>
+                <td>「重要顧客からの声なので」と口頭で補足する</td>
+                <td>関連要望と、売上規模・顧客ランク・契約状況等の案件属性が根拠として明記されている</td>
+              </tr>
+              <tr>
+                <td>会議後</td>
+                <td>議論内容をあらためて整理し直す</td>
+                <td>採用した提案をバックログへ登録する（人が行う）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>AI に任せる価値があるのはどこか:</strong>
+          売上規模・顧客ランク・契約状況からの重み付けはルールで書ける。
+          一方、          <strong>表現の違う要望を同じテーマとしてまとめること</strong>、
+          <strong>プロダクト情報を踏まえて新規追加か既存改善かを判断すること</strong>、
+          <strong>提案内容を人が読める文章にすること</strong>はルールでは書きづらく、ここに実行時の LLM API を使う。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s3">
+    <div class="panel">
+      <div class="panel-head"><h2>3. スコープ</h2></div>
+      <div class="panel-body">
+        <h3 class="sub">3.1 このプロダクトが担う範囲</h3>
+        <ul class="compact">
+          <li>案件情報・要望データ・プロダクト情報の読み込み</li>
+          <li>要望のテーマ分類と、意味が近い要望のグルーピング</li>
+          <li>売上規模・顧客ランク・契約状況から重要度を算出し、優先度付けに反映する</li>
+          <li>プロダクト情報を踏まえた新規追加 / 既存改善の判断と、根拠の提示</li>
+          <li>レビューに使えるレポートの出力・保存</li>
+        </ul>
+
+        <h3 class="sub">3.2 担わない範囲</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>対象外</th>
+                <th>理由</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>要望の収集・入力そのもの</td>
+                <td>営業・CS の既存業務。既に蓄積されたデータを入力として受け取る</td>
+              </tr>
+              <tr>
+                <td>採否と実装計画への反映</td>
+                <td>人が判断する。誤った提案がそのまま実装計画に入るのを防ぐ</td>
+              </tr>
+              <tr>
+                <td>作り込んだ Web UI</td>
+                <td>今回は業務フローが最後まで動くことを優先する</td>
+              </tr>
+              <tr>
+                <td>認証・マルチテナント・本番監視</td>
+                <td>単一チームでの利用を前提とし、本格運用時の課題として切り分ける</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout warn">
+          このエージェントの出力は<strong>提案</strong>であり、決定ではない。
+          最終的な採否と実装計画への反映は人が行う前提で設計する。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s4">
+    <div class="panel">
+      <div class="panel-head"><h2>4. 処理の流れ</h2></div>
+      <div class="panel-body">
+        <p>
+          実行してからレポートが出るまでの流れと、どこをルールで処理し、どこを AI に任せるか。
+        </p>
+
+        <ol class="flow">
+          <li>
+            <strong>案件・要望・プロダクト情報を読み込む<span class="tag rule">ルール</span></strong>
+            <span>対象期間の案件情報、それに紐づく要望、およびプロダクト情報（主な機能・方針・制約等）を取得する。件数が多い場合は上限を設ける。</span>
+          </li>
+          <li>
+            <strong>テーマに分類し、近い要望をまとめる<span class="tag llm">AI</span></strong>
+            <span>1要望につき主テーマ1つを付与し、必要なら関連テーマを補足する。「CSV出力がほしい」「Excelで落としたい」のように表現が違う要望を、同一テーマとして扱う。</span>
+          </li>
+          <li>
+            <strong>案件属性から優先度スコアを計算する<span class="tag rule">ルール</span></strong>
+            <span>売上規模と顧客ランクを初期設定で重視し、契約状況・要望件数・複数案件への広がりを補助的に加味して、テーマごとのスコアを算出する。事業上の重要度は直接入力せず、これらの項目から導出する。</span>
+          </li>
+          <li>
+            <strong>改修 / 追加の提案文と優先度を作る<span class="tag llm">AI</span></strong>
+            <span>スコアと要望内容、プロダクト情報をもとに、何をどう変えるかを文章化する。既存機能の改善か新規追加かを、プロダクトの現状機能と照合して区別する。</span>
+          </li>
+          <li>
+            <strong>レポートとして出力・保存する<span class="tag rule">ルール</span></strong>
+            <span>テーマ・優先度・提案・根拠をまとめ、人が読める形式で保存する。</span>
+          </li>
+          <li>
+            <strong>内容を確認し、バックログへ反映する<span class="tag human">人</span></strong>
+            <span>PdM が提案の採否を判断し、採用した内容を実装計画へ反映する。この工程はツールの外側に置く。</span>
+          </li>
+        </ol>
+
+        <div class="callout">
+          <strong>AI の出力をそのまま信用しない:</strong>
+          優先度スコアはルールで算出し、AI にはその根拠となる要望のまとめと文章化を担当させる。
+          AI が返す内容は決まった形式に沿っているかを検証し、崩れていた場合はやり直す。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s5">
+    <div class="panel">
+      <div class="panel-head"><h2>5. 入力と出力</h2></div>
+      <div class="panel-body">
+        <h3 class="sub">5.1 入力</h3>
+        <p>エージェントが参照する業務データ。事業上の重要度は入力項目として持たず、下記の案件属性からルールで算出する。新規追加 / 既存改善の判断には、プロダクト情報を参照する。</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>データ</th>
+                <th>項目</th>
+                <th>業務上の入手元</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>案件</td>
+                <td>識別子、名称、契約期間、売上規模、顧客ランク、契約状況</td>
+                <td>案件管理シート、CRM、社内マスタ</td>
+              </tr>
+              <tr>
+                <td>要望</td>
+                <td>識別子、対象案件、要望本文、入手元、日時（任意で緊急度）</td>
+                <td>営業・CS のヒアリング、定例議事録、問い合わせ</td>
+              </tr>
+              <tr>
+                <td>プロダクト情報</td>
+                <td>現在提供している主な機能、各機能の説明、プロダクト方針、今期重視していること、既知の開発上の制約</td>
+                <td>プロダクトロードマップ、機能一覧、PdM / 開発チームの社内資料</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sub">
+          「入手元」は要望が記録された経路（定例、問い合わせ等）を示す。案件ごとに分かれた要望を、案件 ID で紐付けて横断的に扱う。
+          プロダクト情報は、要望が既存機能の改善なのか新規追加なのかを判断するための参照データとする。
+        </p>
+
+        <h3 class="sub">5.1.1 データの扱い（サンプル同梱時 / 実務利用時）</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>区分</th>
+                <th>データ</th>
+                <th>保管・共有</th>
+                <th>目的</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>サンプル同梱時</td>
+                <td>GitHub リポジトリ上の架空データ（案件・要望・プロダクト情報）</td>
+                <td>リポジトリに同梱し、第三者が API キーを設定すれば実行できる状態にする</td>
+                <td>デモ・検証。顧客情報を含まない</td>
+              </tr>
+              <tr>
+                <td>実務利用時</td>
+                <td>実際の顧客データと生成レポート</td>
+                <td>GitHub や Google ドライブなど、社内限定の共有環境で管理する</td>
+                <td>週次優先度会議の準備など、本番業務での利用</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="sub">5.2 出力</h3>
+        <p>PdM がレビューと共有に使うレポート。テーマごとに次の情報を含める。</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>項目</th>
+                <th>内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>テーマ</td>
+                <td>まとめられた要望群の名前</td>
+              </tr>
+              <tr>
+                <td>提案</td>
+                <td>何をどう変えるか。プロダクト情報を踏まえた新規追加 / 既存改善の区別</td>
+              </tr>
+              <tr>
+                <td>優先度</td>
+                <td>案件属性、要望件数、複数案件への広がりを踏まえた順位</td>
+              </tr>
+              <tr>
+                <td>根拠</td>
+                <td>元になった要望、参照した案件属性（売上規模・顧客ランク・契約状況等）、参照したプロダクト情報</td>
+              </tr>
+              <tr>
+                <td>影響案件</td>
+                <td>そのテーマに要望を出している案件</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="example">
+          <h4>出力イメージ（1テーマ分）</h4>
+          <dl>
+            <dt>テーマ</dt>
+            <dd>データのエクスポート機能</dd>
+            <dt>提案</dt>
+            <dd>一覧画面に CSV エクスポートを追加する（新規追加 — 現行機能一覧に該当機能なし）</dd>
+            <dt>優先度</dt>
+            <dd>高</dd>
+            <dt>根拠</dt>
+            <dd>4件の要望が該当（A社・B社・C社・D社）。うち2件は売上規模が大きく、契約更新が近い案件から。複数案件にまたがるテーマのため優先度を高めに設定。プロダクト情報の現行機能一覧に CSV エクスポートは含まれないため、新規追加と判断。</dd>
+            <dt>影響案件</dt>
+            <dd>A社、B社、D社</dd>
+          </dl>
+        </div>
+
+        <p>
+          出力は<strong>提案まで</strong>とし、チケット作成や実装計画への反映は人が行う。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s6">
+    <div class="panel">
+      <div class="panel-head"><h2>6. 機能要件</h2></div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>要件</th>
+                <th>優先度</th>
+                <th>補足</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="id">FR-01</td>
+                <td>案件一覧を読み込める</td>
+                <td><span class="prio must">Must</span></td>
+                <td>契約期間、売上規模、顧客ランク、契約状況を含む</td>
+              </tr>
+              <tr>
+                <td class="id">FR-02</td>
+                <td>要望一覧を読み込める</td>
+                <td><span class="prio must">Must</span></td>
+                <td>対象案件・入手元・日時との紐付けがあること</td>
+              </tr>
+              <tr>
+                <td class="id">FR-03</td>
+                <td>プロダクト情報を読み込める</td>
+                <td><span class="prio must">Must</span></td>
+                <td>主な機能、各機能の説明、プロダクト方針、今期重視していること、既知の開発上の制約を含む</td>
+              </tr>
+              <tr>
+                <td class="id">FR-04</td>
+                <td>要望をテーマに分類できる</td>
+                <td><span class="prio must">Must</span></td>
+                <td>1要望につき主テーマ1つ。必要なら関連テーマを補足する</td>
+              </tr>
+              <tr>
+                <td class="id">FR-05</td>
+                <td>表現が違う同じ要望をまとめられる</td>
+                <td><span class="prio must">Must</span></td>
+                <td>文字列の一致だけに頼らない</td>
+              </tr>
+              <tr>
+                <td class="id">FR-06</td>
+                <td>案件属性を踏まえて優先度を付けられる</td>
+                <td><span class="prio must">Must</span></td>
+                <td>売上規模・顧客ランクを重視し、契約状況・要望件数・複数案件への広がりを補助的に加味する</td>
+              </tr>
+              <tr>
+                <td class="id">FR-07</td>
+                <td>機能改修 / 追加の提案を出せる</td>
+                <td><span class="prio must">Must</span></td>
+                <td>プロダクト情報を参照し、新規追加か既存改善かが分かること</td>
+              </tr>
+              <tr>
+                <td class="id">FR-08</td>
+                <td>提案ごとに根拠を示せる</td>
+                <td><span class="prio must">Must</span></td>
+                <td>元の要望、参照した案件属性（売上規模・顧客ランク・契約状況等）、参照したプロダクト情報をたどれること</td>
+              </tr>
+              <tr>
+                <td class="id">FR-09</td>
+                <td>レポートを保存できる</td>
+                <td><span class="prio must">Must</span></td>
+                <td>会議資料として共有できる形式</td>
+              </tr>
+              <tr>
+                <td class="id">FR-10</td>
+                <td>実行の記録を残せる</td>
+                <td><span class="prio should">Should</span></td>
+                <td>いつ・どのデータで実行し、どこで失敗したかを追える</td>
+              </tr>
+              <tr>
+                <td class="id">FR-11</td>
+                <td>実行時の LLM API を切り替えられる</td>
+                <td><span class="prio should">Should</span></td>
+                <td>コストや契約に応じてプロバイダ・モデルを変更できる（開発支援ツールとは別）</td>
+              </tr>
+              <tr>
+                <td class="id">FR-12</td>
+                <td>優先度の重み付けを設定で変えられる</td>
+                <td><span class="prio could">Could</span></td>
+                <td>売上規模・顧客ランク・契約状況等の比率をチーム方針に合わせて調整できる</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s7">
+    <div class="panel">
+      <div class="panel-head"><h2>7. 非機能要件・制約</h2></div>
+      <div class="panel-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>項目</th>
+                <th>内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>実装言語</td>
+                <td>TypeScript</td>
+              </tr>
+              <tr>
+                <td>起動方法</td>
+                <td>TypeScript の CLI から実行する</td>
+              </tr>
+              <tr>
+                <td>実行時の AI</td>
+                <td>LLM API（OpenAI / Anthropic / Google 等）を直接呼び出す。コストを抑えられるモデルを既定とする</td>
+              </tr>
+              <tr>
+                <td>開発支援ツール</td>
+                <td>実装時は Cursor を推奨。Codex、Claude Code でも開発可能な構成とする（実行時の LLM とは別）</td>
+              </tr>
+              <tr>
+                <td>実行時間</td>
+                <td>会議前に実行して待てる範囲（数分程度）で完了する</td>
+              </tr>
+              <tr>
+                <td>データ量の想定</td>
+                <td>年間案件 300 件前後、要望 1200 件前後を上限の目安とする</td>
+              </tr>
+              <tr>
+                <td>コスト</td>
+                <td>週次実行を続けても負担にならないモデルを既定にする</td>
+              </tr>
+              <tr>
+                <td>失敗時の挙動</td>
+                <td>データ取得失敗や AI の応答不正時は、原因が分かる形で停止する。中途半端なレポートは出さない</td>
+              </tr>
+              <tr>
+                <td>再現性</td>
+                <td>サンプル同梱時は GitHub 上の架空データを同梱し、手順に沿えば作成者以外（第三者）でも同じ結果を確認できる</td>
+              </tr>
+              <tr>
+                <td>データの扱い</td>
+                <td>サンプル同梱時は架空データをリポジトリに同梱する。実務利用時は顧客データと生成レポートを社内限定の共有環境で管理する（§5.1.1 参照）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="sub">セキュリティ</h3>
+        <p>
+          実務利用時の案件・要望データには顧客名、売上規模、契約状況といった社外に出せない情報が含まれる。
+          サンプル同梱時は架空データのみを扱う。扱いは次のとおりとする。
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>項目</th>
+                <th>内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>サンプル同梱時のデータ</td>
+                <td>GitHub リポジトリ上の架空データ（案件・要望・プロダクト情報）を同梱する。実在顧客の情報は含めない</td>
+              </tr>
+              <tr>
+                <td>実務利用時の保管場所</td>
+                <td>顧客データと生成レポートは、GitHub や Google ドライブなど社内メンバーのみアクセスできる共有環境に置く。公開リポジトリや個人領域には保存しない</td>
+              </tr>
+              <tr>
+                <td>アクセス権</td>
+                <td>実務データの閲覧・編集できる範囲を社員に限定し、権限は共有サービス側の機能で管理する</td>
+              </tr>
+              <tr>
+                <td>認証情報</td>
+                <td>API キーは環境変数などデータ本体と分離した場所で管理し、リポジトリに含めない</td>
+              </tr>
+              <tr>
+                <td>AI へ渡す情報</td>
+                <td>分析に必要な範囲に限る。個人名や連絡先など不要な個人情報は渡さない</td>
+              </tr>
+              <tr>
+                <td>出力の扱い</td>
+                <td>実務利用時のレポートにも顧客情報が含まれるため、入力データと同じ社内限定の範囲でのみ共有する</td>
+              </tr>
+              <tr>
+                <td>実行記録</td>
+                <td>ログに要望本文や顧客名をそのまま残さない。追跡は識別子で行う</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s8">
+    <div class="panel">
+      <div class="panel-head"><h2>8. 完成基準と決定事項</h2></div>
+      <div class="panel-body">
+        <h3 class="sub">8.1 完成の基準</h3>
+        <p>次がすべて満たされた時点で、想定した業務に使える状態とみなす。</p>
+        <ol class="compact">
+          <li>TypeScript CLI から案件・要望・プロダクト情報を入力し、レポート生成まで止まらずに実行できる</li>
+          <li>レポートにテーマ・提案（新規追加 / 既存改善の区別）・優先度・根拠・影響案件が含まれる</li>
+          <li>1要望につき主テーマ1つが付与され、表現が違う同じ要望が同一テーマにまとめられている</li>
+          <li>優先度が案件属性・要望件数・複数案件への広がりに基づいており、根拠を元の要望までたどって説明できる</li>
+          <li>新規追加 / 既存改善の判断がプロダクト情報（現行機能・方針・制約等）を参照しており、根拠にその参照が示されている</li>
+          <li>API キーが未設定の場合に、秘密情報を出さずに失敗する</li>
+          <li><strong>サンプル同梱時:</strong> GitHub 上の架空データ（案件・要望・プロダクト情報）が同梱され、第三者が手順に沿って実行できる</li>
+          <li><strong>実務利用時:</strong> 顧客データと生成レポートを、社内限定の共有環境で管理できる</li>
+          <li>想定ユーザー・使い方・制約・改善余地を第三者に説明できる状態になっている</li>
+        </ol>
+
+        <h3 class="sub">8.2 決定事項</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>項目</th>
+                <th>決定内容</th>
+                <th>理由</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>起動方法</td>
+                <td>TypeScript の CLI から実行する</td>
+                <td>再現性が高く、CI や定期実行にも載せやすい</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>データの管理（サンプル同梱時）</td>
+                <td>GitHub リポジトリに架空データ（案件・要望・プロダクト情報）を同梱し、第三者が実行できる状態にする</td>
+                <td>デモ・検証に必要。顧客情報を含まない</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>データの管理（実務利用時）</td>
+                <td>顧客データと生成レポートを、GitHub や Google ドライブなど社内限定の共有環境で管理する</td>
+                <td>顧客情報を含むため、アクセス範囲を社内に限定する必要がある</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>開発支援ツール</td>
+                <td>Cursor を推奨。Codex、Claude Code でも開発可能な構成とする</td>
+                <td>実装時の支援ツールであり、実行時の LLM とは別物として扱う</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>実行時の LLM</td>
+                <td>LLM API（OpenAI / Anthropic / Google 等）を直接呼び出す。コスト優先のモデルを既定とし、切り替え可能にする</td>
+                <td>本要件を満たしつつ、運用コストを抑える</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td>テーマ分類</td>
+                <td>1要望につき主テーマ1つ。必要なら関連テーマを補足する</td>
+                <td>分類の一貫性を保ちつつ、横断的な関連も失わない</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td>優先度の重み</td>
+                <td>売上規模と顧客ランクを初期設定で重視し、契約状況・要望件数・複数案件への広がりを補助的に加味する</td>
+                <td>事業インパクトの大きい案件の要望を優先しつつ、横断的なニーズも拾う</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td>プロダクト情報</td>
+                <td>入力データとしてプロダクト情報を持ち、新規追加 / 既存改善の判断に参照する</td>
+                <td>要望だけでは既存機能の改善か新機能かを区別しづらいため</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="sub">8.3 運用しながら調整する項目</h3>
+        <p>上記の決定を前提に、使いながら見直す想定の設定値。</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>項目</th>
+                <th>調整の観点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>優先度の重み配分</td>
+                <td>売上規模・顧客ランクの比率、契約状況・要望件数・複数案件への広がりの加味度合い。実際の判断とのズレを見て調整する</td>
+              </tr>
+              <tr>
+                <td>対象データの範囲</td>
+                <td>1回の実行で扱う期間や件数。処理時間とコストを見ながら決める</td>
+              </tr>
+              <tr>
+                <td>テーマの粒度</td>
+                <td>まとめすぎ / 分かれすぎがないか。レポートの読みやすさを基準に調整する</td>
+              </tr>
+              <tr>
+                <td>実行時の LLM モデル</td>
+                <td>分類精度とコストのバランス。実行頻度が上がった場合に見直す</td>
+              </tr>
+              <tr>
+                <td>レポートの項目</td>
+                <td>会議で実際に使われた項目を残し、参照されない項目は削る</td>
+              </tr>
+              <tr>
+                <td>プロダクト情報の更新</td>
+                <td>機能追加や方針変更に合わせて、入力データをどの頻度で更新するか</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    本資料は要件定義。実装方式・システム構成・運用手順は別途、設計資料および README に記載する。
+  </p>
+</div>
+</body>
+</html>
